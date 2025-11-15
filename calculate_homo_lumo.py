@@ -70,9 +70,16 @@ def parse_xtb_output(output_text):
 
         # HOMO-LUMO Gapの直接記載を探す
         if 'HOMO-LUMO GAP' in line or 'HL-Gap' in line:
+            # eV単位の値を優先的に抽出（"217.68 eV"のようなパターン）
+            # パターン例: "HL-Gap            8.0000 Eh            217.68 eV"
             match = re.search(r'([-\d.]+)\s+eV', line)
             if match:
                 gap = float(match.group(1))
+            # もしEh（Hartree）単位しかない場合は、Eh -> eV変換（1 Eh = 27.2114 eV）
+            elif 'Eh' in line:
+                match_eh = re.search(r'([-\d.]+)\s+Eh', line)
+                if match_eh:
+                    gap = float(match_eh.group(1)) * 27.2114
 
     # Gapが見つからない場合は計算
     if gap is None and homo_energy is not None and lumo_energy is not None:
