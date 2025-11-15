@@ -88,6 +88,48 @@ def parse_xtb_output(output_text):
     return homo_energy, lumo_energy, gap
 
 
+def validate_molecule_for_xtb(mol, mol_name):
+    """
+    分子がxTB計算に適しているか検証
+
+    Parameters:
+    -----------
+    mol : RDKit molecule object
+    mol_name : str
+        分子の名前
+
+    Returns:
+    --------
+    tuple : (is_valid, error_message)
+    """
+    # 原子数チェック
+    num_atoms = mol.GetNumAtoms()
+
+    if num_atoms == 0:
+        return False, "No atoms in molecule"
+
+    if num_atoms > 255:
+        return False, f"Too many atoms: {num_atoms} (xTB limit: 255)"
+
+    if num_atoms > 200:
+        return True, f"Warning: Large molecule ({num_atoms} atoms), calculation may be slow"
+
+    # 元素チェック（Z = 1-86のみ対応）
+    supported_elements = set(range(1, 87))
+    unsupported = []
+
+    for atom in mol.GetAtoms():
+        atomic_num = atom.GetAtomicNum()
+        if atomic_num not in supported_elements:
+            symbol = atom.GetSymbol()
+            unsupported.append(f"{symbol}(Z={atomic_num})")
+
+    if unsupported:
+        return False, f"Unsupported elements: {', '.join(unsupported)} (xTB supports Z=1-86)"
+
+    return True, "OK"
+
+
 def calculate_homo_lumo_xtb(mol, mol_name, xtb_binary):
     """
     単一分子のHOMO/LUMOをxTBで計算
@@ -111,6 +153,17 @@ def calculate_homo_lumo_xtb(mol, mol_name, xtb_binary):
         'GAP': None,
         'status': 'failed'
     }
+
+    # 分子の検証
+    is_valid, message = validate_molecule_for_xtb(mol, mol_name)
+
+    if not is_valid:
+        result['status'] = f'validation failed: {message}'
+        return result
+
+    # 警告メッセージがある場合は表示（計算は続行）
+    if message != "OK":
+        print(f"  {message}")
 
     # 一時ディレクトリを作成
     with tempfile.TemporaryDirectory() as tmpdir:
