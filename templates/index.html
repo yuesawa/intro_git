@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MolPredict Quest - QSAR学習ゲーム</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧪 MolPredict Quest</h1>
+            <p class="subtitle">QSAR解析を楽しく学ぼう！</p>
+        </header>
+
+        <nav class="mode-selector">
+            <button class="mode-btn active" data-mode="tutorial">📚 チュートリアル</button>
+            <button class="mode-btn" data-mode="model">🤖 モデル構築</button>
+            <button class="mode-btn" data-mode="design">🎯 分子デザイン</button>
+            <button class="mode-btn" data-mode="data">📊 訓練データ</button>
+        </nav>
+
+        <!-- Tutorial Mode -->
+        <div id="tutorial-mode" class="game-mode active">
+            <div class="mode-content">
+                <h2>記述子クイズ</h2>
+                <p>分子記述子について学びましょう！</p>
+
+                <div id="quiz-container">
+                    <div class="quiz-card">
+                        <h3 id="quiz-question">問題を読み込み中...</h3>
+                        <div id="quiz-options" class="options-container"></div>
+                        <div id="quiz-explanation" class="explanation hidden"></div>
+                        <button id="next-quiz-btn" class="btn btn-primary hidden">次の問題</button>
+                    </div>
+                </div>
+
+                <div class="score-display">
+                    <p>正解数: <span id="score">0</span> / <span id="total">0</span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Model Building Mode -->
+        <div id="model-mode" class="game-mode">
+            <div class="mode-content">
+                <h2>モデル構築モード</h2>
+                <p>QSAR モデルを構築して予測精度を確認しましょう！</p>
+
+                <div class="model-selector">
+                    <label>
+                        <input type="radio" name="model-type" value="linear" checked>
+                        線形回帰
+                    </label>
+                    <label>
+                        <input type="radio" name="model-type" value="rf">
+                        ランダムフォレスト
+                    </label>
+                </div>
+
+                <div class="input-section">
+                    <label for="smiles-input">SMILES式を入力:</label>
+                    <input type="text" id="smiles-input" placeholder="例: CCO (エタノール)">
+                    <button id="predict-btn" class="btn btn-primary">活性予測</button>
+                </div>
+
+                <div id="prediction-results" class="results-container hidden">
+                    <h3>予測結果</h3>
+                    <div class="result-card">
+                        <div class="result-row">
+                            <span class="label">予測活性値:</span>
+                            <span id="pred-activity" class="value"></span>
+                        </div>
+                        <div class="result-row">
+                            <span class="label">モデル R²:</span>
+                            <span id="model-r2" class="value"></span>
+                        </div>
+                        <div class="result-row">
+                            <span class="label">モデル RMSE:</span>
+                            <span id="model-rmse" class="value"></span>
+                        </div>
+                    </div>
+
+                    <h4>分子記述子</h4>
+                    <div id="descriptor-table" class="descriptor-grid"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Molecular Design Mode -->
+        <div id="design-mode" class="game-mode">
+            <div class="mode-content">
+                <h2>分子デザインチャレンジ</h2>
+                <p>目標活性値を達成する分子を設計しましょう！</p>
+
+                <div class="challenge-info">
+                    <div class="target-box">
+                        <h3>目標活性値</h3>
+                        <div class="target-value" id="target-activity">6.5 ± 0.5</div>
+                    </div>
+
+                    <div class="constraints-box">
+                        <h3>制約条件</h3>
+                        <ul>
+                            <li>分子量: 100 - 250</li>
+                            <li>LogP: 1.0 - 5.0</li>
+                            <li>HBD ≤ 3</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="input-section">
+                    <label for="design-smiles-input">設計した分子 (SMILES):</label>
+                    <input type="text" id="design-smiles-input" placeholder="例: c1ccc(CC)cc1">
+                    <button id="check-design-btn" class="btn btn-primary">チェック</button>
+                </div>
+
+                <div id="design-results" class="results-container hidden">
+                    <h3>設計評価</h3>
+                    <div id="design-status" class="status-message"></div>
+
+                    <div class="result-card">
+                        <div class="result-row">
+                            <span class="label">予測活性値:</span>
+                            <span id="design-activity" class="value"></span>
+                            <span id="activity-status" class="status-icon"></span>
+                        </div>
+                        <div class="result-row">
+                            <span class="label">分子量:</span>
+                            <span id="design-mw" class="value"></span>
+                            <span id="mw-status" class="status-icon"></span>
+                        </div>
+                        <div class="result-row">
+                            <span class="label">LogP:</span>
+                            <span id="design-logp" class="value"></span>
+                            <span id="logp-status" class="status-icon"></span>
+                        </div>
+                        <div class="result-row">
+                            <span class="label">HBD:</span>
+                            <span id="design-hbd" class="value"></span>
+                            <span id="hbd-status" class="status-icon"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="success-message" class="success-banner hidden">
+                    <h2>🎉 おめでとうございます！</h2>
+                    <p>すべての条件を満たす分子を設計できました！</p>
+                    <button id="new-challenge-btn" class="btn btn-success">新しいチャレンジ</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Training Data View -->
+        <div id="data-mode" class="game-mode">
+            <div class="mode-content">
+                <h2>訓練データセット</h2>
+                <p>モデルの学習に使用するデータを確認できます</p>
+
+                <div id="training-data-table" class="data-table-container">
+                    <table id="data-table">
+                        <thead>
+                            <tr>
+                                <th>SMILES</th>
+                                <th>活性値</th>
+                                <th>分子量</th>
+                                <th>LogP</th>
+                                <th>HBD</th>
+                                <th>HBA</th>
+                                <th>TPSA</th>
+                            </tr>
+                        </thead>
+                        <tbody id="data-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
