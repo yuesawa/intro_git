@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Pokemon Style Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <h1>Simple Pokemon Style Game</h1>
+        <canvas id="gameCanvas" width="640" height="480"></canvas>
+        <div id="ui-layer">
+            <div id="message-box" style="display: none;"></div>
+            <div id="battle-menu" style="display: none;">
+                <button id="btn-attack">たたかう</button>
+                <button id="btn-run">にげる</button>
+            </div>
+        </div>
+        <p class="controls">操作方法: 矢印キーで移動 / Enter, Space, Zキーで決定</p>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>
